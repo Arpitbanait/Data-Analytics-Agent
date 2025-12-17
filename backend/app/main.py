@@ -1,0 +1,30 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.routers import upload, analyze, charts, insights, dashboard, export, status, connect
+
+app = FastAPI(title="DataViz AI API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(upload.router, prefix="/upload", tags=["Upload"])
+app.include_router(analyze.router, prefix="/analyze", tags=["Analysis"])
+app.include_router(charts.router, prefix="/charts", tags=["Charts"])
+app.include_router(insights.router, prefix="/insights", tags=["Insights"])
+app.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+app.include_router(export.router, prefix="/export", tags=["Export"])
+app.include_router(connect.router, prefix="/connect-db", tags=["Database"])
+app.include_router(status.router, prefix="/status", tags=["Status"])
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}

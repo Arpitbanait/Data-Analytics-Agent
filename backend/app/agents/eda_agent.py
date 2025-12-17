@@ -1,0 +1,182 @@
+from celery import shared_task
+import pandas as pd
+import numpy as np
+
+
+@shared_task(bind=True)
+def run_eda(self, analysis_id: str):
+    from app.core.job_manager_file import (
+        get_analysis,
+        get_job_data,
+        update_analysis_status,
+        save_analysis,
+    )
+
+    # ----------------------------
+    # Fetch job data
+    # ----------------------------
+    analysis = get_analysis(analysis_id)
+    if not analysis or "job_id" not in analysis:
+        raise ValueError(f"Invalid analysis_id={analysis_id}")
+
+    job_id = analysis["job_id"]
+    job = get_job_data(job_id)
+
+    if not job or "data" not in job:
+        raise ValueError(f"Job data not found for job_id={job_id}")
+
+    update_analysis_status(analysis_id, "running", progress=10)
+
+    if isinstance(job["data"], dict):
+        df = pd.DataFrame.from_dict(job["data"])
+    else:
+        df = pd.DataFrame(job["data"])
+
+    if df.empty:
+        raise ValueError("Failed to load dataframe")
+
+    # ----------------------------
+    # DATA PREPROCESSING
+    # ----------------------------
+    original_rows = len(df)
+    original_duplicates = df.duplicated().sum()
+    original_missing = df.isnull().sum().sum()
+
+    # Remove duplicates
+    df = df.drop_duplicates()
+    duplicates_removed = original_rows - len(df)
+
+    # Smart missing value handling: only remove rows where ALL values are missing
+    # For rows with some missing values, keep them for EDA
+    rows_all_missing = df.isnull().all(axis=1).sum()
+    df = df[~df.isnull().all(axis=1)]  # Only drop rows where ALL values are NaN
+    missing_rows_removed = rows_all_missing
+
+    preprocessing_info = {
+        "original_rows": original_rows,
+        "original_total_missing_cells": int(original_missing),
+        "duplicates_found": int(original_duplicates),
+        "duplicates_removed": int(duplicates_removed),
+        "rows_with_missing_removed": int(missing_rows_removed),
+        "cleaned_rows": len(df),
+        "data_quality_score": round(100 * (len(df) / original_rows), 2) if original_rows > 0 else 0
+    }
+
+    if df.empty:
+        raise ValueError("No data remaining after preprocessing (all rows had missing values or were duplicates)")
+
+    # ----------------------------
+    # EDA computation
+    # ----------------------------
+    eda = {}
+
+    # Basic stats
+    eda["row_count"] = len(df)
+    eda["column_count"] = len(df.columns)
+    eda["columns"] = list(df.columns)
+    eda["dtypes"] = {col: str(dtype) for col, dtype in df.dtypes.items()}
+    eda["preprocessing"] = preprocessing_info
+
+    update_analysis_status(analysis_id, "running", progress=30)
+
+    # Missing values (should be 0 after cleaning, but checking for data quality)
+    eda["missing_values"] = {
+        col: int(df[col].isnull().sum()) for col in df.columns
+    }
+    eda["missing_percentage"] = {
+        col: round(100 * df[col].isnull().sum() / len(df), 2) for col in df.columns
+    }
+
+    update_analysis_status(analysis_id, "running", progress=50)
+
+    # Numeric columns stats
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    eda["numeric_columns"] = numeric_cols
+    eda["numeric_stats"] = {}
+
+    def safe_float(value, default=0.0):
+        """Convert to float, replacing NaN/Inf with default"""
+        try:
+            val = float(value)
+            if np.isnan(val) or np.isinf(val):
+                return default
+            return round(val, 4)
+        except (ValueError, TypeError):
+            return default
+
+    for col in numeric_cols:
+        # Skip calculation if column is all NaN
+        if df[col].notna().sum() == 0:
+            eda["numeric_stats"][col] = {
+                "mean": 0.0,
+                "median": 0.0,
+                "std": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "q25": 0.0,
+                "q75": 0.0,
+                "skewness": 0.0,
+                "kurtosis": 0.0,
+            }
+        else:
+            eda["numeric_stats"][col] = {
+                "mean": safe_float(df[col].mean()),
+                "median": safe_float(df[col].median()),
+                "std": safe_float(df[col].std()),
+                "min": safe_float(df[col].min()),
+                "max": safe_float(df[col].max()),
+                "q25": safe_float(df[col].quantile(0.25)),
+                "q75": safe_float(df[col].quantile(0.75)),
+                "skewness": safe_float(df[col].skew()),
+                "kurtosis": safe_float(df[col].kurtosis()),
+            }
+
+    update_analysis_status(analysis_id, "running", progress=70)
+
+    # Categorical columns analysis
+    categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+    eda["categorical_columns"] = categorical_cols
+    eda["categorical_stats"] = {}
+
+    for col in categorical_cols:
+        value_counts = df[col].value_counts()
+        eda["categorical_stats"][col] = {
+            "unique_count": int(df[col].nunique()),
+            "top_value": str(value_counts.index[0]) if len(value_counts) > 0 else None,
+            "top_value_count": int(value_counts.iloc[0]) if len(value_counts) > 0 else 0,
+            "mode": str(df[col].mode()[0]) if len(df[col].mode()) > 0 else None,
+        }
+
+    # Correlation (for numeric columns)
+    if len(numeric_cols) > 1:
+        corr_matrix = df[numeric_cols].corr()
+        # Replace NaN/Inf values in correlation matrix
+        corr_matrix = corr_matrix.fillna(0.0).replace([np.inf, -np.inf], 0.0)
+        eda["correlation"] = {
+            col: {k: safe_float(v) for k, v in row.items()}
+            for col, row in corr_matrix.to_dict().items()
+        }
+
+    # Data quality metrics
+    eda["data_quality"] = {
+        "completeness": round(100 * (1 - (sum(eda["missing_values"].values()) / (len(df) * len(df.columns)))), 2) if len(df) > 0 else 100,
+        "uniqueness": round(100 * (1 - (duplicates_removed / original_rows)), 2) if original_rows > 0 else 100,
+        "consistency_score": preprocessing_info["data_quality_score"]
+    }
+
+    update_analysis_status(analysis_id, "running", progress=85)
+
+    # Save cleaned data back to the job store
+    cleaned_job_payload = {
+        "filename": job.get("filename"),
+        "data": df.to_dict(orient="list"),
+    }
+    from app.core.job_manager_file import save_job_data
+    save_job_data(job_id, cleaned_job_payload)
+
+    # Save analysis with EDA data only (avoid nesting)
+    save_analysis(analysis_id, eda)
+
+    update_analysis_status(analysis_id, "completed", progress=100)
+
+    return {"analysis_id": analysis_id, "eda": eda, "preprocessing": preprocessing_info}
