@@ -98,6 +98,42 @@ data-weaver-ai/.turbo/
 *.key
 *.cert
 secrets.json
+
+# Celery
+celerybeat-schedule
+*.pid
+
+# Cache
+.cache/
+*.cache
+
+# Build and dist folders
+build/
+dist/
+*.whl
+
+# Mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE - specific files
+*.sublime-project
+*.sublime-workspace
+
+# Mac specific
+.AppleDouble
+.LSOverride
+
+# Temporary directories
+tmp/
+temp/
+*.tmp
 credentials.json
 
 # IDE
