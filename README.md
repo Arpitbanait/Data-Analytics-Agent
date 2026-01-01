@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Analytics Pro .ai
 
 AI-Powered Data Analysis and Visualization Platform that transforms your data into actionable insights using Claude AI.
@@ -347,3 +348,120 @@ This project is licensed under the MIT License.
 ⭐ If you find this project helpful, please give it a star on GitHub!
 
 **Built with ❤️ using Claude AI**
+=======
+# PPT Generator
+
+A full-stack application for generating professional PowerPoint presentations using AI.
+
+## Project Structure
+
+```
+ppt_generator/
+├── backend/          # Python FastAPI backend
+├── frontend/         # React + TypeScript frontend
+├── README.md         # This file
+└── .gitignore        # Git configuration
+```
+
+## Prerequisites
+
+- **Python 3.8+** (for backend)
+- **Node.js 16+** (for frontend)
+- **npm** or **yarn** (for frontend package management)
+- **Anthropic API Key** (required for AI-powered slide generation)
+
+## Backend Setup
+
+### 1. Install Dependencies
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### 2. Configure Environment Variables
+
+Create a `.env` file in the `backend/` directory:
+
+```bash
+ANTHROPIC_API_KEY=your_api_key_here
+```
+
+**How to Get Your API Key:**
+1. Visit [https://console.anthropic.com/](https://console.anthropic.com/)
+2. Sign up or log in to your account
+3. Navigate to the API Keys section
+4. Create a new API key
+5. Copy the key and paste it into your `.env` file
+
+### 3. Run the Backend Server
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+The backend will be available at `http://localhost:8000`
+
+## Frontend Setup
+
+### 1. Install Dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+### 2. Run the Development Server
+
+```bash
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
+## Running the Full Application
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
+python -m uvicorn main:app --reload
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+Then open your browser and navigate to `http://localhost:5173/`
+
+## Features
+
+- Generate presentations from topic input
+- Support for multiple slide types
+- AI-powered content generation
+- Responsive web interface
+- Export presentations as PowerPoint files
+
+## API Documentation
+
+Once the backend is running, view the API documentation at:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+## Troubleshooting
+
+### Backend Issues
+- Ensure Python 3.8+ is installed: `python --version`
+- Check that all dependencies are installed: `pip list`
+- Verify your `.env` file is in the `backend/` directory
+
+### Frontend Issues
+- Ensure Node.js 16+ is installed: `node --version`
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check that the backend server is running on port 8000
+
+## License
+
+MIT
+>>>>>>> bf6c773 (first commit)

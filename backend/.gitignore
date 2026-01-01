@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -7,6 +8,13 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+=======
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+>>>>>>> bf6c773 (first commit)
 .Python
 build/
 develop-eggs/
@@ -27,6 +35,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+<<<<<<< HEAD
 # PyInstaller
 *.manifest
 *.spec
@@ -115,10 +124,40 @@ venv.bak/
 /site
 
 # mypy
+=======
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+>>>>>>> bf6c773 (first commit)
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
+<<<<<<< HEAD
 # Pyre type checker
 .pyre/
 
@@ -162,3 +201,9 @@ desktop.ini
 # Logs
 *.log
 logs/
+=======
+# Misc
+*.log
+.cache/
+exports/
+>>>>>>> bf6c773 (first commit)
