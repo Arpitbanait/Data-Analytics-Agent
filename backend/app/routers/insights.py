@@ -11,14 +11,14 @@ class InsightRequest(BaseModel):
     analysis_id: str
 
 
-@router.post("/")
+@router.post("")
 def create_insights(request: InsightRequest):
     analysis = get_analysis(request.analysis_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
 
     try:
-        # Call the task directly (eager execution with memory backend)
+       
         result = generate_insights(request.analysis_id)
         print(f"Insights generated: {result}")
     except Exception as e:

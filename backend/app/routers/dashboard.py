@@ -9,7 +9,7 @@ class DashboardRequest(BaseModel):
     analysis_id: str
 
 
-@router.post("/")
+@router.post("")
 def build_dashboard(request: DashboardRequest):
     analysis = get_analysis(request.analysis_id)
     if not analysis:

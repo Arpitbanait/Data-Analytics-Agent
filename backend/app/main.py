@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import upload, analyze, charts, insights, dashboard, export, status, connect
+from app.routers import upload, analyze, charts, insights, dashboard, export, status, connect, auth
+from app.core.database import init_db
 
 app = FastAPI(title="DataViz AI API", version="1.0.0")
+
+# Initialize database on startup
+init_db()
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(upload.router, prefix="/upload", tags=["Upload"])
 app.include_router(analyze.router, prefix="/analyze", tags=["Analysis"])
 app.include_router(charts.router, prefix="/charts", tags=["Charts"])

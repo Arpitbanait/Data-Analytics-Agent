@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { GlobalBackButton } from '@/components/GlobalBackButton';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { ThemeProvider } from '@/hooks/useTheme';
 
@@ -12,6 +13,7 @@ import Dashboard from '@/pages/Dashboard';
 import Analyses from '@/pages/Analyses';
 import Upload from '@/pages/Upload';
 import AnalysisWorkspace from '@/pages/AnalysisWorkspace';
+import Profile from '@/pages/Profile';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -61,6 +63,7 @@ function AppRoutes() {
       <Route path="/analyses" element={<Analyses />} />
       <Route path="/upload" element={<Upload />} />
       <Route path="/analysis/:id" element={<AnalysisWorkspace />} />
+      <Route path="/profile" element={<Profile />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -75,6 +78,7 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
+              <GlobalBackButton />
               <AppRoutes />
             </AuthProvider>
           </BrowserRouter>

@@ -14,6 +14,7 @@ import { startAnalysis } from '@/api/analyze';
 import { getJobStatus } from '@/api/status';
 import { backend } from '@/api/backend';
 import { getUserId } from '@/lib/userSession';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function UploadPage() {
   const [isDragging, setIsDragging] = useState(false);
@@ -27,6 +28,7 @@ export default function UploadPage() {
   const [selectedTable, setSelectedTable] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -114,7 +116,8 @@ export default function UploadPage() {
       }
 
       // Step 3: start analysis (EDA)
-      const analysisRes = await startAnalysis(jobId, getUserId());
+      const scopedUserId = getUserId(user?.id, user?.email ?? null);
+      const analysisRes = await startAnalysis(jobId, scopedUserId);
       clearInterval(progressInterval);
       setUploadProgress(100);
 
@@ -375,7 +378,11 @@ export default function UploadPage() {
                             });
                             const jobId = res.data?.job_id;
                             if (!jobId) throw new Error('No job_id returned');
-                            const analyzeRes = await backend.post('/analyze', { job_id: jobId });
+                            const scopedUserId = getUserId(user?.id, user?.email ?? null);
+                            const analyzeRes = await backend.post('/analyze', {
+                              job_id: jobId,
+                              user_id: scopedUserId,
+                            });
                             const analysisId = analyzeRes.data?.analysis_id;
                             if (!analysisId) throw new Error('No analysis_id returned');
                             navigate(`/analysis/${analysisId}`);

@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { authService } from '@/services/authService';
 
 // Mock auth mode flag
 const USE_MOCK_AUTH = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
@@ -18,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock user for development
 const createMockUser = (email: string): User => ({
-  id: 'mock-user-id',
+  id: `mock-${email.trim().toLowerCase()}`,
   email,
   app_metadata: {},
   user_metadata: {},
@@ -32,6 +33,24 @@ const createMockSession = (email: string): Session => ({
   expires_in: 3600,
   refresh_token: 'mock-refresh-token',
   user: createMockUser(email),
+} as Session);
+
+// Helper to create JWT-based user from auth response
+const createJWTUser = (userId: string, email: string, token: string): User => ({
+  id: userId,
+  email,
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as User);
+
+const createJWTSession = (userId: string, email: string, token: string): Session => ({
+  access_token: token,
+  token_type: 'bearer',
+  expires_in: 86400, // 24 hours
+  refresh_token: null,
+  user: createJWTUser(userId, email, token),
 } as Session);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,22 +71,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Real Supabase auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // JWT auth: check for stored token
+    const token = authService.getStoredToken();
+    if (token) {
+      // In a real app, you'd verify the token here
+      // For now, we'll just use it if it exists
+      const storedEmail = localStorage.getItem('jwt_user_email');
+      const storedUserId = localStorage.getItem('jwt_user_id');
+      
+      if (storedEmail && storedUserId) {
+        const jwtSession = createJWTSession(storedUserId, storedEmail, token);
+        setSession(jwtSession);
+        setUser(jwtSession.user);
       }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
+    setLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
@@ -80,20 +98,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null };
     }
 
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-    
-    return { error: error as Error | null };
+    try {
+      // JWT backend signup
+      const response = await authService.signUp({ email, password });
+      authService.saveToken(response.access_token);
+      localStorage.setItem('jwt_user_email', response.email);
+      localStorage.setItem('jwt_user_id', response.user_id);
+      
+      const jwtSession = createJWTSession(response.user_id, response.email, response.access_token);
+      setSession(jwtSession);
+      setUser(jwtSession.user);
+      
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -106,12 +125,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null };
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    return { error: error as Error | null };
+    try {
+      // JWT backend login
+      const response = await authService.login({ email, password });
+      authService.saveToken(response.access_token);
+      localStorage.setItem('jwt_user_email', response.email);
+      localStorage.setItem('jwt_user_id', response.user_id);
+      
+      const jwtSession = createJWTSession(response.user_id, response.email, response.access_token);
+      setSession(jwtSession);
+      setUser(jwtSession.user);
+      
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
@@ -123,7 +151,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    await supabase.auth.signOut();
+    // JWT logout
+    authService.removeToken();
+    localStorage.removeItem('jwt_user_email');
+    localStorage.removeItem('jwt_user_id');
+    setSession(null);
+    setUser(null);
   };
 
   return (

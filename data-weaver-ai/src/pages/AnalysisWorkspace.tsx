@@ -36,6 +36,8 @@ interface EDAResult {
   dtypes: Record<string, string>;
   preprocessing?: {
     original_rows: number;
+    original_total_missing_cells?: number;
+    duplicates_found?: number;
     duplicates_removed: number;
     rows_with_missing_removed: number;
     cleaned_rows: number;
@@ -349,13 +351,42 @@ export default function AnalysisWorkspace() {
     }
   };
 
-  const getMissingValuesTotal = (): number => {
-    // After cleaning, missing_values is always 0. Show original missing count instead.
-    if (edaResults?.preprocessing?.rows_with_missing_removed !== undefined) {
-      return edaResults.preprocessing.rows_with_missing_removed;
-    }
+  const getCurrentMissingValuesTotal = (): number => {
     if (!edaResults?.missing_values) return 0;
     return Object.values(edaResults.missing_values).reduce((a, b) => a + b, 0);
+  };
+
+  const getOriginalMissingValuesTotal = (): number | null => {
+    if (edaResults?.preprocessing?.original_total_missing_cells !== undefined) {
+      return edaResults.preprocessing.original_total_missing_cells;
+    }
+    return null;
+  };
+
+  const getRemovedMissingValuesTotal = (): number | null => {
+    const original = getOriginalMissingValuesTotal();
+    if (original === null) return null;
+    return Math.max(original - getCurrentMissingValuesTotal(), 0);
+  };
+
+  const getDuplicatesRemovedTotal = (): number => {
+    if (!edaResults?.preprocessing?.duplicates_removed) return 0;
+    return Math.max(edaResults.preprocessing.duplicates_removed, 0);
+  };
+
+  const getRowsRemovedForMissingTotal = (): number => {
+    if (!edaResults?.preprocessing?.rows_with_missing_removed) return 0;
+    return Math.max(edaResults.preprocessing.rows_with_missing_removed, 0);
+  };
+
+  const isLegacyPreprocessingResult = (): boolean => {
+    const originalMissing = getOriginalMissingValuesTotal();
+    if (!edaResults?.preprocessing || originalMissing === null) return false;
+    return (
+      originalMissing > 0 &&
+      getCurrentMissingValuesTotal() > 0 &&
+      getRowsRemovedForMissingTotal() === 0
+    );
   };
 
   if (loading) {
@@ -475,8 +506,13 @@ export default function AnalysisWorkspace() {
                           <TrendingUp className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Missing</p>
-                          <p className="text-2xl font-bold">{getMissingValuesTotal()}</p>
+                          <p className="text-sm text-muted-foreground">Missing Cells (After)</p>
+                          <p className="text-2xl font-bold">{getCurrentMissingValuesTotal().toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Removed: {getRemovedMissingValuesTotal() !== null
+                              ? getRemovedMissingValuesTotal()!.toLocaleString()
+                              : '—'}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -517,11 +553,19 @@ export default function AnalysisWorkspace() {
                             </div>
                             <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                               <span className="font-medium">Duplicates Found</span>
-                              <span className="font-bold text-orange-600">{edaResults.preprocessing.duplicates_found?.toLocaleString() || '0'}</span>
+                              <span className="font-bold text-orange-600">
+                                {edaResults.preprocessing.duplicates_found !== undefined
+                                  ? edaResults.preprocessing.duplicates_found.toLocaleString()
+                                  : '—'}
+                              </span>
                             </div>
                             <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                               <span className="font-medium">Cells with Missing Values</span>
-                              <span className="font-bold text-orange-600">{edaResults.preprocessing.original_total_missing_cells?.toLocaleString() || '0'}</span>
+                              <span className="font-bold text-orange-600">
+                                {getOriginalMissingValuesTotal() !== null
+                                  ? getOriginalMissingValuesTotal()!.toLocaleString()
+                                  : '—'}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -538,12 +582,44 @@ export default function AnalysisWorkspace() {
                             </div>
                             <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                               <span className="font-medium">Duplicates Removed</span>
-                              <span className="font-bold text-orange-500">−{edaResults.preprocessing.duplicates_removed.toLocaleString()}</span>
+                              <span className="font-bold text-orange-500">
+                                {getDuplicatesRemovedTotal() > 0
+                                  ? `-${getDuplicatesRemovedTotal().toLocaleString()}`
+                                  : '0'}
+                              </span>
                             </div>
                             <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                              <span className="font-medium">Missing Data Rows Removed</span>
-                              <span className="font-bold text-orange-500">−{edaResults.preprocessing.rows_with_missing_removed.toLocaleString()}</span>
+                              <span className="font-medium">Rows Removed (Any Missing Value)</span>
+                              <span className="font-bold text-orange-500">
+                                {getRowsRemovedForMissingTotal() > 0
+                                  ? `-${getRowsRemovedForMissingTotal().toLocaleString()}`
+                                  : '0'}
+                              </span>
                             </div>
+                            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                              <span className="font-medium">Current Missing Cells</span>
+                              <span className={`font-bold ${getCurrentMissingValuesTotal() === 0 ? 'text-green-700 dark:text-green-400' : 'text-orange-600'}`}>
+                                {getCurrentMissingValuesTotal().toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                              <span className="font-medium">Missing Cells Removed</span>
+                              <span className="font-bold text-green-700 dark:text-green-400">
+                                {getRemovedMissingValuesTotal() !== null
+                                  ? getRemovedMissingValuesTotal()!.toLocaleString()
+                                  : '—'}
+                              </span>
+                            </div>
+                            {getCurrentMissingValuesTotal() === 0 && (
+                              <div className="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 text-sm text-green-700 dark:text-green-300">
+                                No missing values remain after preprocessing.
+                              </div>
+                            )}
+                            {isLegacyPreprocessingResult() && (
+                              <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-sm text-amber-800 dark:text-amber-200">
+                                This analysis appears to be from an older preprocessing run. Please run a new analysis to apply the latest missing-value cleanup.
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

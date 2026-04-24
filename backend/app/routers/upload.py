@@ -5,7 +5,7 @@ import uuid
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("")
 async def upload_file(file: UploadFile = File(...)):
     if not file.filename.endswith((".csv", ".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Only CSV and Excel files supported")
@@ -13,10 +13,10 @@ async def upload_file(file: UploadFile = File(...)):
     job_id = str(uuid.uuid4())
     content = await file.read()
 
-    # Initialize job in file storage
+   
     create_job(job_id)
 
-    # Process file synchronously
+   
     process_file(job_id, content, file.filename)
 
     return {

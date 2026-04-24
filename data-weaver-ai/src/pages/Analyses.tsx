@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/layout/Navbar';
 import { backend } from '@/api/backend';
 import { getUserId } from '@/lib/userSession';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Analysis {
   id: string;
@@ -19,14 +20,15 @@ interface Analysis {
 export default function AnalysesPage() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchAnalyses();
-  }, []);
+  }, [user?.id, user?.email]);
 
   const fetchAnalyses = async () => {
     try {
-      const userId = getUserId();
+      const userId = getUserId(user?.id, user?.email ?? null);
       const res = await backend.get('/status/analyses?limit=100', {
         params: { user_id: userId }
       });

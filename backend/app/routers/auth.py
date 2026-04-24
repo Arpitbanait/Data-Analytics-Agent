@@ -36,8 +36,8 @@ def signup(request: SignUpRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
-   
+
+    # Create new user
     user_id = str(uuid.uuid4())
     hashed_password = hash_password(request.password)
     

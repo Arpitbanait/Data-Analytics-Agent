@@ -11,7 +11,7 @@ class ChartRequest(BaseModel):
     analysis_id: str
 
 
-@router.post("/")
+@router.post("")
 def create_charts(request: ChartRequest):
     analysis = get_analysis(request.analysis_id)
     if not analysis:

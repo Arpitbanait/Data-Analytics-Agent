@@ -38,6 +38,13 @@ def run_eda(self, analysis_id: str):
     # ----------------------------
     # DATA PREPROCESSING
     # ----------------------------
+    # Normalize common "missing-like" text values so counting/removal is accurate.
+    df = df.replace(r"^\s*$", np.nan, regex=True)
+    for col in df.select_dtypes(include=["object", "string"]).columns:
+        normalized = df[col].astype(str).str.strip().str.lower()
+        missing_like = normalized.isin({"na", "n/a", "none", "null", "nan"})
+        df.loc[missing_like, col] = np.nan
+
     original_rows = len(df)
     original_duplicates = df.duplicated().sum()
     original_missing = df.isnull().sum().sum()
@@ -46,11 +53,10 @@ def run_eda(self, analysis_id: str):
     df = df.drop_duplicates()
     duplicates_removed = original_rows - len(df)
 
-    # Smart missing value handling: only remove rows where ALL values are missing
-    # For rows with some missing values, keep them for EDA
-    rows_all_missing = df.isnull().all(axis=1).sum()
-    df = df[~df.isnull().all(axis=1)]  # Only drop rows where ALL values are NaN
-    missing_rows_removed = rows_all_missing
+    # Remove rows that contain any missing value so cleaned data has no nulls.
+    rows_with_any_missing = df.isnull().any(axis=1).sum()
+    df = df.dropna(how="any")
+    missing_rows_removed = rows_with_any_missing
 
     preprocessing_info = {
         "original_rows": original_rows,

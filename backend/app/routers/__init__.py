@@ -1,4 +1,4 @@
-from . import upload, analyze, charts, insights, export, status, dashboard, connect
+from . import upload, analyze, charts, insights, export, status, dashboard, connect, auth
 
 __all__ = [
 	"upload",
@@ -9,4 +9,5 @@ __all__ = [
 	"status",
 	"dashboard",
 	"connect",
+	"auth",
 ]

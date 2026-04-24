@@ -15,14 +15,27 @@ def _load_job(job_id: str) -> Optional[Dict[str, Any]]:
     file_path = _get_job_file(job_id)
     if not file_path.exists():
         return None
-    with open(file_path, 'r') as f:
-        return json.load(f)
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        # Corrupted or partially written file; let callers recreate it safely.
+        print(f"[job_manager_file] Corrupted JSON for job '{job_id}', resetting file")
+        return None
+    except Exception as e:
+        print(f"[job_manager_file] Failed to load job '{job_id}': {e}")
+        return None
 
 def _save_job(job_id: str, data: Dict[str, Any]):
     """Save job data to JSON file"""
     file_path = _get_job_file(job_id)
-    with open(file_path, 'w') as f:
+    temp_file_path = file_path.with_suffix(".json.tmp")
+
+    with open(temp_file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2)
+
+    os.replace(temp_file_path, file_path)
 
 def create_job(job_id: str):
     """Create a new job entry"""

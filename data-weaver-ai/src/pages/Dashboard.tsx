@@ -43,11 +43,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user?.id, user?.email]);
 
   const fetchData = async () => {
     try {
-      const userId = getUserId();
+      const userId = getUserId(user?.id, user?.email ?? null);
       const res = await backend.get('/status/analyses?limit=100', {
         params: { user_id: userId }
       });

@@ -11,7 +11,7 @@ class AnalyzeRequest(BaseModel):
     columns: list[str] | None = None
     user_id: str | None = None
 
-@router.post("/")
+@router.post("")
 async def analyze_data(request: AnalyzeRequest):
     job_data = get_job_data(request.job_id)
     if not job_data:

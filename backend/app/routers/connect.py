@@ -16,7 +16,7 @@ class ConnectRequest(BaseModel):
     db_type: str
 
 
-@router.post("/")
+@router.post("")
 def connect_database(request: ConnectRequest):
     if not request.connection_string:
         raise HTTPException(status_code=400, detail="connection_string is required")
@@ -24,11 +24,6 @@ def connect_database(request: ConnectRequest):
     try:
         conn_str = request.connection_string.strip()
 
-        # Auto-augment connection string with appropriate driver when missing
-        # Examples:
-        # - postgresql:// -> postgresql+psycopg2://
-        # - mysql:// -> mysql+pymysql://
-        # - sqlite:// or sqlite:/// already fine
         if request.db_type:
             db_type = request.db_type.lower()
             if db_type.startswith("postgres"):
@@ -38,7 +33,7 @@ def connect_database(request: ConnectRequest):
                 if "+" not in conn_str and conn_str.startswith("mysql://"):
                     conn_str = conn_str.replace("mysql://", "mysql+pymysql://", 1)
             elif db_type.startswith("sqlite"):
-                # keep as-is; sqlite works with sqlite:// or sqlite:///path.db
+
                 pass
 
         engine = create_engine(conn_str, pool_pre_ping=True)
@@ -126,7 +121,7 @@ def load_table(request: LoadTableRequest):
         df = df.replace([np.inf, -np.inf], np.nan)
         df = df.astype(object).where(pd.notnull(df), None)
 
-        # Save as a job using file store
+    
         from app.core.job_manager_file import create_job, save_job_data
         job_id = str(uuid.uuid4())
         create_job(job_id)
