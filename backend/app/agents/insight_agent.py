@@ -63,7 +63,7 @@ def generate_insights(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=10)
 
-    # Build a more comprehensive prompt with all available data
+   
     eda_data = analysis.get("eda", {})
     
     insights_text = None
@@ -72,7 +72,7 @@ def generate_insights(self, analysis_id: str):
         try:
             update_analysis_status(analysis_id, "running", progress=40)
             
-            # Build detailed prompt with all EDA insights
+           
             prompt = f"""You are a senior data analyst expert. Analyze the following EDA results and provide a comprehensive, detailed report.
 
 Dataset Overview:
@@ -118,7 +118,7 @@ Format your response with clear sections and bullet points. Be specific and quan
 
     update_analysis_status(analysis_id, "running", progress=80)
 
-    # Save insights as plain string
+    
     save_insights(analysis_id, insights_text)
     update_analysis_status(analysis_id, "completed", progress=100)
 

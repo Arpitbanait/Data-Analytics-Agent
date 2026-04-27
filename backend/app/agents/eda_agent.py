@@ -12,9 +12,7 @@ def run_eda(self, analysis_id: str):
         save_analysis,
     )
 
-    # ----------------------------
-    # Fetch job data
-    # ----------------------------
+  
     analysis = get_analysis(analysis_id)
     if not analysis or "job_id" not in analysis:
         raise ValueError(f"Invalid analysis_id={analysis_id}")
@@ -35,10 +33,7 @@ def run_eda(self, analysis_id: str):
     if df.empty:
         raise ValueError("Failed to load dataframe")
 
-    # ----------------------------
-    # DATA PREPROCESSING
-    # ----------------------------
-    # Normalize common "missing-like" text values so counting/removal is accurate.
+
     df = df.replace(r"^\s*$", np.nan, regex=True)
     for col in df.select_dtypes(include=["object", "string"]).columns:
         normalized = df[col].astype(str).str.strip().str.lower()
@@ -49,11 +44,11 @@ def run_eda(self, analysis_id: str):
     original_duplicates = df.duplicated().sum()
     original_missing = df.isnull().sum().sum()
 
-    # Remove duplicates
+    
     df = df.drop_duplicates()
     duplicates_removed = original_rows - len(df)
 
-    # Remove rows that contain any missing value so cleaned data has no nulls.
+  
     rows_with_any_missing = df.isnull().any(axis=1).sum()
     df = df.dropna(how="any")
     missing_rows_removed = rows_with_any_missing
@@ -71,12 +66,10 @@ def run_eda(self, analysis_id: str):
     if df.empty:
         raise ValueError("No data remaining after preprocessing (all rows had missing values or were duplicates)")
 
-    # ----------------------------
-    # EDA computation
-    # ----------------------------
+
     eda = {}
 
-    # Basic stats
+    
     eda["row_count"] = len(df)
     eda["column_count"] = len(df.columns)
     eda["columns"] = list(df.columns)
@@ -85,7 +78,6 @@ def run_eda(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=30)
 
-    # Missing values (should be 0 after cleaning, but checking for data quality)
     eda["missing_values"] = {
         col: int(df[col].isnull().sum()) for col in df.columns
     }
@@ -95,7 +87,7 @@ def run_eda(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=50)
 
-    # Numeric columns stats
+  
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     eda["numeric_columns"] = numeric_cols
     eda["numeric_stats"] = {}
@@ -111,7 +103,7 @@ def run_eda(self, analysis_id: str):
             return default
 
     for col in numeric_cols:
-        # Skip calculation if column is all NaN
+     
         if df[col].notna().sum() == 0:
             eda["numeric_stats"][col] = {
                 "mean": 0.0,
@@ -139,7 +131,7 @@ def run_eda(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=70)
 
-    # Categorical columns analysis
+
     categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     eda["categorical_columns"] = categorical_cols
     eda["categorical_stats"] = {}
@@ -153,17 +145,16 @@ def run_eda(self, analysis_id: str):
             "mode": str(df[col].mode()[0]) if len(df[col].mode()) > 0 else None,
         }
 
-    # Correlation (for numeric columns)
     if len(numeric_cols) > 1:
         corr_matrix = df[numeric_cols].corr()
-        # Replace NaN/Inf values in correlation matrix
+
         corr_matrix = corr_matrix.fillna(0.0).replace([np.inf, -np.inf], 0.0)
         eda["correlation"] = {
             col: {k: safe_float(v) for k, v in row.items()}
             for col, row in corr_matrix.to_dict().items()
         }
 
-    # Data quality metrics
+  
     eda["data_quality"] = {
         "completeness": round(100 * (1 - (sum(eda["missing_values"].values()) / (len(df) * len(df.columns)))), 2) if len(df) > 0 else 100,
         "uniqueness": round(100 * (1 - (duplicates_removed / original_rows)), 2) if original_rows > 0 else 100,
@@ -172,7 +163,7 @@ def run_eda(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=85)
 
-    # Save cleaned data back to the job store
+    
     cleaned_job_payload = {
         "filename": job.get("filename"),
         "data": df.to_dict(orient="list"),
@@ -180,7 +171,7 @@ def run_eda(self, analysis_id: str):
     from app.core.job_manager_file import save_job_data
     save_job_data(job_id, cleaned_job_payload)
 
-    # Save analysis with EDA data only (avoid nesting)
+    
     save_analysis(analysis_id, eda)
 
     update_analysis_status(analysis_id, "completed", progress=100)

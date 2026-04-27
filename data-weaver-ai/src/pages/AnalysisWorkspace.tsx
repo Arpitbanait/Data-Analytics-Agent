@@ -25,10 +25,10 @@ import { getAnalysisResults } from '@/api/analyze';
 import { getDataPreview } from '@/api/preview';
 import { exportPythonCode } from '@/api/export';
 
-// Dynamic import for Plotly
+
 import Plot from 'react-plotly.js';
 
-// Local EDA Result type for this component
+
 interface EDAResult {
   row_count: number;
   column_count: number;
@@ -326,22 +326,15 @@ export default function AnalysisWorkspace() {
     }
   };
 
-  const handleExportCode = async (format: 'python' | 'sql') => {
+  const handleExportCode = async () => {
     if (!id) return;
     
     try {
-      if (format === 'python') {
-        await exportPythonCode(id);
-        toast({
-          title: 'Success',
-          description: 'Python code downloaded successfully!',
-        });
-      } else {
-        toast({
-          title: 'Coming Soon',
-          description: 'SQL export will be available soon.',
-        });
-      }
+      await exportPythonCode(id);
+      toast({
+        title: 'Success',
+        description: 'Python code downloaded successfully!',
+      });
     } catch (error) {
       toast({
         title: 'Export Failed',
@@ -427,13 +420,9 @@ export default function AnalysisWorkspace() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => handleExportCode('python')}>
+            <Button variant="outline" onClick={() => handleExportCode()}>
               <Download className="mr-2 h-4 w-4" />
               Export Python
-            </Button>
-            <Button variant="outline" onClick={() => handleExportCode('sql')}>
-              <Download className="mr-2 h-4 w-4" />
-              Export SQL
             </Button>
           </div>
         </div>

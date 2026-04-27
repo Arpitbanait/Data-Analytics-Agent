@@ -10,14 +10,9 @@ import io
 @celery_app.task(bind=True)
 def process_file(self, job_id: str, content: bytes, filename: str):
     try:
-        # ----------------------------
-        # Start processing
-        # ----------------------------
+        
         update_job_status(job_id, "processing", progress=10)
 
-        # ----------------------------
-        # Load file
-        # ----------------------------
         if filename.endswith(".csv"):
             df = pd.read_csv(io.BytesIO(content))
         elif filename.endswith((".xlsx", ".xls")):
@@ -27,9 +22,7 @@ def process_file(self, job_id: str, content: bytes, filename: str):
 
         update_job_status(job_id, "processing", progress=50)
 
-        # ----------------------------
-        # Store parsed data (SAFE)
-        # ----------------------------
+     
         save_job_data(
             job_id,
             {
@@ -40,9 +33,6 @@ def process_file(self, job_id: str, content: bytes, filename: str):
             },
         )
 
-        # ----------------------------
-        # Completed
-        # ----------------------------
         update_job_status(job_id, "completed", progress=100)
 
     except Exception as e:

@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import shutil
 import os
@@ -8,7 +7,6 @@ from llm.slide_planner import generate_slide_plan
 from parsers.pdf_parser import extract_text_from_pdf
 from parsers.docx_parser import extract_text_from_docx
 from llm.rag_pipeline import get_rag_pipeline
-from exporter import create_pptx
 
 app = FastAPI(title="AI Presentation Generator")
 
@@ -32,11 +30,6 @@ class FileSlideRequest(BaseModel):
     topic: str
     audience: str = "Business executives"
     tone: str = "professional"
-
-
-class ExportRequest(BaseModel):
-    title: str = "Presentation"
-    slides: list
 
 
 @app.post("/generate-slides")
@@ -105,7 +98,7 @@ async def generate_from_file(
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
-        # Step 1: Process file with RAG pipeline
+       
         rag_pipeline = get_rag_pipeline()
         rag_result = rag_pipeline.process_file(file_path)
         
@@ -115,13 +108,13 @@ async def generate_from_file(
                 "message": f"Failed to process file: {rag_result.get('message', 'Unknown error')}"
             }
         
-        # Step 2: Use topic for generation (if not provided, use filename)
+       
         if not topic:
             topic = os.path.splitext(file.filename)[0]
         
         print(f"[API] Generating slides about: {topic}")
         
-        # Step 3: Generate slides with RAG context
+     
         slides_response = generate_slide_plan(
             topic=topic,
             audience=audience,
@@ -129,7 +122,7 @@ async def generate_from_file(
             use_rag_context=True
         )
         
-        # Extract slides array from response
+       
         slides_array = slides_response.get("slides", []) if isinstance(slides_response, dict) else []
         
         return {
@@ -162,21 +155,6 @@ def clear_context():
 def health_check():
     """Health check endpoint"""
     return {"status": "ok", "message": "API is running"}
-
-
-@app.post("/export-pptx")
-def export_pptx(req: ExportRequest):
-    try:
-        out_path = create_pptx(req.slides, title=req.title)
-        filename = os.path.basename(out_path)
-        return FileResponse(
-            out_path,
-            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            filename=filename
-        )
-    except Exception as e:
-        print(f"[API] Export error: {e}")
-        return {"status": "error", "message": str(e)}
 
 
 

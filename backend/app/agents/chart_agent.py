@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-# Vibrant, modern color palette for all charts
+
 COLOR_SEQ = [
     "#FF6B6B",  # coral red
     "#4ECDC4",  # turquoise
@@ -20,7 +20,7 @@ COLOR_SEQ = [
     "#D7BDE2",  # lavender
 ]
 
-# Rainbow/gradient colors for better visual appeal
+
 RAINBOW_COLORS = [
     "#FF0000",  # red
     "#FF7F00",  # orange
@@ -41,9 +41,7 @@ def generate_charts(self, analysis_id: str):
         save_charts,
     )
 
-    # ----------------------------
-    # Fetch analysis
-    # ----------------------------
+  
     analysis = get_analysis(analysis_id)
     if not analysis or "job_id" not in analysis:
         raise ValueError(f"Invalid analysis_id={analysis_id}")
@@ -71,12 +69,10 @@ def generate_charts(self, analysis_id: str):
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
-    # Get preprocessing info if available
+
     preprocessing_info = analysis.get("eda", {}).get("preprocessing", {})
 
-    # ----------------------------
-    # Data Quality & Preprocessing Report
-    # ----------------------------
+
     if preprocessing_info:
         fig = go.Figure(data=[go.Table(
             header=dict(
@@ -115,15 +111,13 @@ def generate_charts(self, analysis_id: str):
             "data": fig.to_json(),
         })
 
-    # ----------------------------
-    # Dataset Overview
-    # ----------------------------
+   
     fig = go.Figure(data=[
         go.Table(
             header=dict(
                 values=["<b>Metric</b>", "<b>Value</b>"],
                 fill_color='paleturquoise',
-                align='left',
+                align='left', 
                 font=dict(size=12),
             ),
             cells=dict(
@@ -149,10 +143,8 @@ def generate_charts(self, analysis_id: str):
         "data": fig.to_json(),
     })
 
-    # ----------------------------
-    # Numeric distributions with statistics
-    # ----------------------------
-    for col in numeric_cols[:4]:  # Increased from 3 to 4
+   
+    for col in numeric_cols[:4]:  
         fig = px.histogram(
             df,
             x=col,
@@ -188,9 +180,7 @@ def generate_charts(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=60)
 
-    # ----------------------------
-    # Correlation heatmap with values
-    # ----------------------------
+  
     if len(numeric_cols) > 1:
         corr = df[numeric_cols].corr()
         fig = px.imshow(
@@ -217,16 +207,14 @@ def generate_charts(self, analysis_id: str):
             "data": fig.to_json(),
         })
 
-    # ----------------------------
-    # Box plots for numeric columns (showing outliers and quartiles)
-    # ----------------------------
+    
     if len(numeric_cols) >= 2:
         fig = go.Figure()
-        for col in numeric_cols[:5]:  # Up to 5 numeric columns
+        for col in numeric_cols[:5]: 
             fig.add_trace(go.Box(
                 y=df[col],
                 name=col,
-                boxmean='sd',  # Show mean and standard deviation
+                boxmean='sd', 
                 marker_color=COLOR_SEQ[numeric_cols.index(col) % len(COLOR_SEQ)],
             ))
         
@@ -247,14 +235,13 @@ def generate_charts(self, analysis_id: str):
             "data": fig.to_json(),
         })
 
-    # ----------------------------
-    # Categorical distributions with value labels
-    # ----------------------------
-    for col in categorical_cols[:3]:  # Increased from 2 to 3
+   
+    for col in categorical_cols[:3]:
         value_counts_df = df[col].value_counts().reset_index()
         value_counts_df.columns = [col, "count"]
         value_counts_df[col] = value_counts_df[col].astype(str).str.slice(0, 40)
         value_counts_df = value_counts_df.sort_values("count", ascending=True).tail(12)
+        
         
         fig = px.bar(
             value_counts_df,
@@ -289,9 +276,7 @@ def generate_charts(self, analysis_id: str):
 
     update_analysis_status(analysis_id, "running", progress=85)
 
-    # ----------------------------
-    # Numeric column statistics summary
-    # ----------------------------
+    
     if numeric_cols:
         stats_data = []
         for col in numeric_cols:

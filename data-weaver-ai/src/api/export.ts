@@ -17,8 +17,3 @@ export async function exportPythonCode(analysisId: string): Promise<void> {
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
 }
-
-export async function exportSQLCode(analysisId: string): Promise<void> {
-  // TODO: Implement SQL export
-  throw new Error("SQL export not yet implemented");
-}

@@ -119,7 +119,7 @@ def main():
         "backend/llm/rag_pipeline.py",
         "backend/requirements.txt",
         "backend/.env",
-        "frontend/src/App.tsx",
+        "data-weaver-ai/src/App.tsx",
     ]
     
     for file_path in required_files:
@@ -136,7 +136,7 @@ def main():
         print("\n✅ ALL CHECKS PASSED!")
         print("\n🚀 You're ready to use RAG pipeline:")
         print("\n  1. Start backend:  cd backend && python -m uvicorn main:app --reload")
-        print("  2. Start frontend: cd frontend && npm run dev")
+        print("  2. Start frontend: cd data-weaver-ai && npm run dev")
         print("  3. Visit:          http://localhost:5173")
         print("  4. Upload a file and generate slides!")
         return 0

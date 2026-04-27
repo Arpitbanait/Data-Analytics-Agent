@@ -19,10 +19,9 @@ async def analyze_data(request: AnalyzeRequest):
 
     analysis_id = str(uuid.uuid4())
 
-    # Register analysis with user_id
     create_analysis(analysis_id, request.job_id, request.user_id)
 
-    # Run EDA (synchronously in eager mode)
+    
     run_eda(analysis_id)
 
     analysis = get_analysis(analysis_id)

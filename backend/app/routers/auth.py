@@ -29,7 +29,7 @@ class AuthResponse(BaseModel):
 @router.post("/signup", response_model=AuthResponse)
 def signup(request: SignUpRequest, db: Session = Depends(get_db)):
     """Register a new user"""
-    # Check if user already exists
+   
     existing_user = db.query(User).filter(User.email == request.email).first()
     if existing_user:
         raise HTTPException(

@@ -20,9 +20,9 @@ celery_app.conf.update(
     enable_utc=True,
     task_always_eager=True,
     task_eager_propagates=True,
-    task_time_limit=300,      # 5 minutes per task
+    task_time_limit=300,     
     worker_prefetch_multiplier=1,
-    result_expires=3600,      # 1 hour
+    result_expires=3600,     
 )
 
 celery_app.conf.task_routes = {

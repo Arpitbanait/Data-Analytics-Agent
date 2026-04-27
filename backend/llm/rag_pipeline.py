@@ -61,8 +61,7 @@ class InMemoryVectorStore:
     
     def __init__(self):
         self.documents: List[Dict] = []
-        # Use HuggingFace embeddings (free, no API key needed)
-        # Model: all-MiniLM-L6-v2 is small, fast, and effective
+      
         self.embeddings_model = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2",
             encode_kwargs={"normalize_embeddings": True}
@@ -92,10 +91,9 @@ class InMemoryVectorStore:
         if not self.documents:
             return []
         
-        # Embed the query
+      
         query_embedding = self.embeddings_model.embed_query(query)
         
-        # Calculate similarity scores (dot product with normalized vectors)
         scores = []
         for doc in self.documents:
             # Cosine similarity (since vectors are normalized)

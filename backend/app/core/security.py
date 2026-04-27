@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status, Header
 from pydantic import BaseModel
 from app.core.config import settings
 
-# JWT Configuration (from settings)
+
 JWT_SECRET = settings.JWT_SECRET
 JWT_ALGORITHM = settings.JWT_ALGORITHM
 JWT_EXPIRATION_HOURS = settings.JWT_EXPIRATION_HOURS
@@ -21,7 +21,7 @@ class TokenData(BaseModel):
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')    
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -73,7 +73,7 @@ def get_current_user(authorization: str = Header(None)) -> TokenData:
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Extract token from "Bearer <token>"
+  
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
         raise HTTPException(

@@ -47,6 +47,7 @@ def connect_database(request: ConnectRequest):
             "tables": tables,
             "message": "Connection successful",
         }
+    
     except SQLAlchemyError as e:
         raise HTTPException(status_code=400, detail=f"Database connection failed: {str(e)}")
     except Exception as e:
@@ -70,7 +71,7 @@ def load_table(request: LoadTableRequest):
     if not request.connection_string or not request.table:
         raise HTTPException(status_code=400, detail="connection_string and table are required")
 
-    # Augment driver as in connect
+    
     conn_str = request.connection_string.strip()
     db_type = (request.db_type or "").lower()
     if db_type.startswith("postgres"):
@@ -83,8 +84,8 @@ def load_table(request: LoadTableRequest):
     try:
         print(f"[load-table] Connecting with: {db_type}")
         engine = create_engine(conn_str, pool_pre_ping=True)
-        with engine.connect() as conn:
-            # Use SQLAlchemy reflection + select for robust cross-DB quoting
+        with engine.connect() as conn: 
+           
             from sqlalchemy import MetaData, Table, select
             metadata = MetaData()
             try:
@@ -93,7 +94,7 @@ def load_table(request: LoadTableRequest):
                 raise HTTPException(status_code=400, detail=f"Table not found or inaccessible: {str(e)}")
 
             stmt = select(table_obj)
-            if request.limit and request.limit > 0:
+            if request.limit and request.limit > 0: 
                 stmt = stmt.limit(int(request.limit))
 
             print(f"[load-table] Executing reflected select with limit={request.limit}")
@@ -103,7 +104,7 @@ def load_table(request: LoadTableRequest):
         if df.empty:
             raise HTTPException(status_code=400, detail="Selected table returned no rows")
 
-        # Convert non-JSON types (dates/times/decimals) and sanitize NaN/Inf
+     
         def _to_jsonable(v):
             if isinstance(v, (pd.Timestamp, datetime, date, time)):
                 try:
