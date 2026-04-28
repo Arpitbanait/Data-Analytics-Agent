@@ -4,4 +4,4 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-MODEL_NAME = "claude-3-haiku-20240307"
+MODEL_NAME = "claude-haiku-4-5-20251001"

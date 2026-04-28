@@ -144,7 +144,7 @@ def generate_charts(self, analysis_id: str):
     })
 
    
-    for col in numeric_cols[:4]:  
+    for col in numeric_cols:  
         fig = px.histogram(
             df,
             x=col,
@@ -210,7 +210,7 @@ def generate_charts(self, analysis_id: str):
     
     if len(numeric_cols) >= 2:
         fig = go.Figure()
-        for col in numeric_cols[:5]: 
+        for col in numeric_cols: 
             fig.add_trace(go.Box(
                 y=df[col],
                 name=col,
@@ -236,7 +236,7 @@ def generate_charts(self, analysis_id: str):
         })
 
    
-    for col in categorical_cols[:3]:
+    for col in categorical_cols:
         value_counts_df = df[col].value_counts().reset_index()
         value_counts_df.columns = [col, "count"]
         value_counts_df[col] = value_counts_df[col].astype(str).str.slice(0, 40)
